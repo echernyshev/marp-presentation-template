@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Test outputs
+tests/fixtures/
+*.log
+
+# Test projects (created during integration testing)
+test-integration/
+test-presentation/
+test-install/
+existing-project/
+test-project/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# npm
+.npm
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+.temp/

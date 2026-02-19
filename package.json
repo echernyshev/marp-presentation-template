@@ -1,0 +1,46 @@
+{
+  "name": "create-marp-presentation",
+  "version": "1.0.1",
+  "description": "Create a new Marp presentation project with one command",
+  "bin": {
+    "create-marp-presentation": "index.js"
+  },
+  "files": [
+    "index.js",
+    "template/"
+  ],
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "marp",
+    "presentation",
+    "markdown",
+    "slides",
+    "template",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/echernyshev/marp-presentation-template.git"
+  },
+  "homepage": "https://github.com/echernyshev/marp-presentation-template#readme",
+  "bugs": {
+    "url": "https://github.com/echernyshev/marp-presentation-template/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  },
+  "devDependencies": {
+    "fast-glob": "^3.3.3",
+    "jest": "^29.7.0"
+  }
+}

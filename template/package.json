@@ -1,0 +1,22 @@
+{
+  "name": "marp-presentation",
+  "version": "1.0.0",
+  "description": "Marp presentation",
+  "scripts": {
+    "dev": "marp -s . --html --allow-local-files",
+    "build:html": "marp presentation.md -o output/index.html --html && npm run copy:static",
+    "build:pdf": "marp presentation.md -o output/presentation.pdf --allow-local-files && npm run copy:static",
+    "build:pptx": "marp presentation.md -o output/presentation.pptx --allow-local-files && npm run copy:static",
+    "build:all": "npm run build:html && npm run build:pdf && npm run build:pptx",
+    "copy:static": "node scripts/copy-static.js",
+    "clean": "rimraf output"
+  },
+  "devDependencies": {
+    "@marp-team/marp-cli": "^4.1.2",
+    "fast-glob": "^3.3.3",
+    "rimraf": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
