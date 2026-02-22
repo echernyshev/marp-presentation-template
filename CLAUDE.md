@@ -8,6 +8,23 @@ This is `create-marp-presentation` - an npm meta-package that scaffolds new Marp
 
 ## Architecture
 
+### Optional Template Files
+
+The `template-optional/` folder contains files that are conditionally copied based on user preference:
+
+- `examples.md` - Comprehensive demonstration of Marp capabilities (13 slides)
+- `static/demo-image.png` - Demo image for image insertion examples
+
+When users run `npx create-marp-presentation <name>`, they are prompted:
+```
+Create example slides file? (Y/n)
+```
+
+- Yes (default): Both `presentation.md` and `examples.md` are created
+- No: Only `presentation.md` is created
+
+In non-interactive mode (CI/CD), examples are created by default.
+
 ### Meta-Package Structure
 
 The repository contains two distinct package.json files with different purposes:
@@ -80,6 +97,8 @@ npm publish --dry-run         # Validate package without publishing
 | `template/package.json` | Scaffolded project's dependencies and scripts |
 | `tests/cli.test.js` | CLI tests (creates real projects, slow due to npm install) |
 | `tests/copy-static.test.js` | Static file copying tests (uses fixtures) |
+| `template-optional/examples.md` | Comprehensive Marp capabilities demo (13 slide types) |
+| `template-optional/static/demo-image.png` | Demo image for image insertion examples |
 
 ## Important Constraints
 

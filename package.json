@@ -1,13 +1,14 @@
 {
   "name": "create-marp-presentation",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Create a new Marp presentation project with one command",
   "bin": {
     "create-marp-presentation": "index.js"
   },
   "files": [
     "index.js",
-    "template/"
+    "template/",
+    "template-optional/"
   ],
   "scripts": {
     "test": "jest"

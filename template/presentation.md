@@ -4,28 +4,28 @@ theme: default
 paginate: true
 ---
 
-# Моя презентация
+# My Presentation
 
-Добро пожаловать в вашу новую Marp презентацию!
-
----
-
-## О Marp
-
-Marp (Markdown Presentation Ecosystem) — это инструмент для создания презентаций на Markdown.
+Welcome to your new Marp presentation!
 
 ---
 
-## Возможности
+## About Marp
 
-- **Простой Markdown** - пишите слайды в привычном формате
-- **Темы** - используйте встроенные или создайте свою
-- **Экспорт** - HTML, PDF, PowerPoint
-- **Live preview** - мгновенный предпросмотр изменений
+Marp (Markdown Presentation Ecosystem) is a tool for creating presentations in Markdown.
 
 ---
 
-## Код с подсветкой
+## Features
+
+- **Simple Markdown** - write slides in a familiar format
+- **Themes** - use built-in ones or create your own
+- **Export** - HTML, PDF, PowerPoint
+- **Live preview** - instant preview of changes
+
+---
+
+## Code with Syntax Highlighting
 
 ```javascript
 function hello() {
@@ -35,9 +35,9 @@ function hello() {
 
 ---
 
-## Изображения
+## Images
 
-Поместите изображения в папку `static/` и используйте их:
+Place images in the `static/` folder and use them:
 
 ```
 ![alt text](static/image.png)
@@ -45,6 +45,6 @@ function hello() {
 
 ---
 
-# Вопросы?
+# Questions?
 
-Документация: https://marp.app/
+Documentation: https://marp.app/

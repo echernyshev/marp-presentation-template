@@ -75,3 +75,45 @@ describe('CLI Initializer', () => {
     expect(result.stderr.toString()).toMatch(/Invalid project name|path traversal/);
   });
 });
+
+describe('CLI with examples', () => {
+  const projectRoot = path.resolve(__dirname, '..');
+  const testProjects = [];
+
+  afterEach(() => {
+    for (const project of testProjects) {
+      if (fs.existsSync(project)) {
+        fs.rmSync(project, { recursive: true, force: true });
+      }
+    }
+  });
+
+  test('should create examples.md in non-interactive mode', () => {
+    const projectName = 'test-examples-auto';
+    const projectPath = path.join(projectRoot, projectName);
+    testProjects.push(projectPath);
+
+    // stdin is not a TTY in test environment, so examples should be created
+    const result = spawnSync('node', ['index.js', projectName], {
+      cwd: projectRoot,
+    });
+
+    expect(result.status).toBe(0);
+    expect(fs.existsSync(path.join(projectPath, 'examples.md'))).toBe(true);
+    expect(fs.existsSync(path.join(projectPath, 'static', 'demo-image.png'))).toBe(true);
+  });
+
+  test('should not create examples.md when user declines', () => {
+    const projectName = 'test-no-examples';
+    const projectPath = path.join(projectRoot, projectName);
+    testProjects.push(projectPath);
+
+    const result = spawnSync('node', ['index.js', projectName], {
+      cwd: projectRoot,
+      input: 'n\n',
+    });
+
+    expect(result.status).toBe(0);
+    expect(fs.existsSync(path.join(projectPath, 'examples.md'))).toBe(false);
+  });
+});

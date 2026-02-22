@@ -1,14 +1,14 @@
 # Create Marp Presentation
 
-Создайте новую Marp презентацию одной командой.
+Create a new Marp presentation with a single command.
 
-## Установка
+## Installation
 
 ```bash
 npx create-marp-presentation my-presentation
 ```
 
-## Использование
+## Usage
 
 ```bash
 cd my-presentation
@@ -16,7 +16,7 @@ npm run dev     # Live preview
 npm run build:all  # Build all formats
 ```
 
-## Возможности
+## Features
 
 - 🚀 One-command setup
 - 📝 Markdown slides
@@ -25,10 +25,41 @@ npm run build:all  # Build all formats
 - 📁 Static files support
 - 🔥 Live preview
 
-## Документация
+## Local Testing
 
-После создания проекта читайте README в папке проекта.
+To test project generation without publishing to npm:
 
-## Лицензия
+```bash
+# Clone the repository
+git clone https://github.com/echernyshev/marp-presentation-template.git
+cd marp-presentation-template
+
+# Install dependencies for tests
+npm install
+
+# Run tests
+npm test
+
+# Create a test project (interactive mode)
+node index.js test-project
+
+# Check the contents
+cd test-project
+ls -la
+npm run dev
+```
+
+Other example commands:
+
+```bash
+# Create a test project without examples
+echo "n" | node index.js test-project-minimal
+```
+
+## Documentation
+
+After creating a project, read the README in the project folder.
+
+## License
 
 MIT

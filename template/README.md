@@ -1,39 +1,39 @@
 # Marp Presentation
 
-Шаблон для создания презентаций с Marp.
+A template for creating presentations with Marp.
 
-## Начало работы
+## Getting Started
 
-### Live-предпросмотр
+### Live Preview
 
 ```bash
 npm run dev
 ```
 
-Откроется браузер с автообновлением при изменениях.
+Opens a browser with auto-reload on changes.
 
-### Создание слайдов
+### Creating Slides
 
-Редактируйте `presentation.md` — это главный файл презентации.
+Edit `presentation.md` — this is the main presentation file.
 
-## Сборка презентации
+## Building the Presentation
 
 ```bash
-npm run build:html    # HTML презентация (интерактивная)
-npm run build:pdf     # PDF файл
+npm run build:html    # HTML presentation (interactive)
+npm run build:pdf     # PDF file
 npm run build:pptx    # PowerPoint
-npm run build:all     # Все форматы сразу
+npm run build:all     # All formats at once
 ```
 
-Результат появится в папке `output/`.
+The output will appear in the `output/` folder.
 
-## Статические файлы
+## Static Files
 
-Поместите изображения и другие файлы в папку, указанную в `marp.config.js`.
+Place images and other files in the folder specified in `marp.config.js`.
 
-По умолчанию: `static/`
+Default: `static/`
 
-Вы можете добавить дополнительные папки в `marp.config.js`:
+You can add additional folders in `marp.config.js`:
 
 ```javascript
 module.exports = {
@@ -42,15 +42,15 @@ module.exports = {
 };
 ```
 
-## Очистка
+## Cleaning Up
 
 ```bash
 npm run clean
 ```
 
-Удаляет папку `output/`.
+Removes the `output/` folder.
 
-## Полезные ссылки
+## Useful Links
 
 - [Marp Documentation](https://marp.app/)
 - [Marp CLI](https://github.com/marp-team/marp-cli)
