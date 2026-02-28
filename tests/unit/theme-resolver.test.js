@@ -50,6 +50,30 @@ describe('ThemeResolver.extractThemeName', () => {
     const result = ThemeResolver.extractThemeName(':root { }');
     expect(result).toBeNull();
   });
+
+  test('should support Unicode characters in theme name (gödel)', () => {
+    const css = '/* @theme gödel */\n:root { color: red; }';
+    const result = ThemeResolver.extractThemeName(css);
+    expect(result).toBe('gödel');
+  });
+
+  test('should support Unicode characters in theme name (café)', () => {
+    const css = '/* @theme café */\n:root { color: blue; }';
+    const result = ThemeResolver.extractThemeName(css);
+    expect(result).toBe('café');
+  });
+
+  test('should support Unicode characters with hyphens', () => {
+    const css = '/* @theme gödel-theme */\n:root { color: green; }';
+    const result = ThemeResolver.extractThemeName(css);
+    expect(result).toBe('gödel-theme');
+  });
+
+  test('should support various Unicode characters', () => {
+    const css = '/* @theme test_ñaño */\n:root { color: yellow; }';
+    const result = ThemeResolver.extractThemeName(css);
+    expect(result).toBe('test_ñaño');
+  });
 });
 
 describe('ThemeResolver.extractDependencies', () => {
