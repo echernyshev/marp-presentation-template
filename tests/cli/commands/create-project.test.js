@@ -300,12 +300,10 @@ describe('cli/commands/create-project', () => {
       spawnSync.mockImplementation(originalMock);
     });
 
-    test('should copy optional files when user wants examples', async () => {
+    test('should not create examples directory without themes (new architecture)', async () => {
       const tempBase = getTempDir('examples-test');
       const projectName = 'examples-test';
       const templatePath = path.join(__dirname, '..', '..', '..', 'template');
-
-      askCreateExamples.mockResolvedValue(true);
 
       await createProject(projectName, {
         outputPath: tempBase,
@@ -313,11 +311,11 @@ describe('cli/commands/create-project', () => {
       });
 
       const projectPath = path.join(tempBase, projectName);
-      // Check if examples.md was copied (it should exist in template-optional)
-      const examplesPath = path.join(projectPath, 'examples.md');
-      // This test depends on whether examples.md exists in template-optional
-      // We'll just verify the function was called
-      expect(askCreateExamples).toHaveBeenCalled();
+      // In the new architecture, examples are only created when themes are selected
+      // Since no themes are selected in non-interactive mode, no examples directory
+      expect(fs.existsSync(path.join(projectPath, 'examples'))).toBe(false);
+      // Old examples.md file is gone
+      expect(fs.existsSync(path.join(projectPath, 'examples.md'))).toBe(false);
     });
   });
 });

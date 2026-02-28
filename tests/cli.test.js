@@ -133,35 +133,40 @@ describe('CLI with examples', () => {
     expect(fs.existsSync(themesPath)).toBe(false);
   });
 
-  test('should create examples.md in non-interactive mode', () => {
+  test('should NOT create examples directory in non-interactive mode (no themes selected)', () => {
     const projectPath = getTempDir('cli-examples');
     const projectName = path.basename(projectPath);
     const pathDir = path.dirname(projectPath);
     testProjects.push(projectPath);
 
-    // stdin is not a TTY in test environment, so examples should be created
+    // stdin is not a TTY in test environment, so themes are not selected
+    // examples are only copied when themes are selected
     const result = spawnSync('node', ['index.js', projectName, '--path', pathDir], {
       cwd: projectRoot,
     });
 
     expect(result.status).toBe(0);
-    expect(fs.existsSync(path.join(projectPath, 'examples.md'))).toBe(true);
-    expect(fs.existsSync(path.join(projectPath, 'static', 'demo-image.png'))).toBe(true);
+    // In the new architecture, examples are only created when themes are selected
+    // Non-interactive mode skips theme selection, so no examples directory
+    expect(fs.existsSync(path.join(projectPath, 'examples'))).toBe(false);
   });
 
-  test('should not create examples.md when user declines', () => {
+  test('should not create examples directory when user declines themes', () => {
     const projectPath = getTempDir('cli-no-examples');
     const projectName = path.basename(projectPath);
     const pathDir = path.dirname(projectPath);
     testProjects.push(projectPath);
 
+    // User declines theme selection with 'n' - no themes means no examples
     const result = spawnSync('node', ['index.js', projectName, '--path', pathDir], {
       cwd: projectRoot,
       input: 'n\n',
     });
 
     expect(result.status).toBe(0);
+    // Old examples.md is gone, new examples directory should not exist
     expect(fs.existsSync(path.join(projectPath, 'examples.md'))).toBe(false);
+    expect(fs.existsSync(path.join(projectPath, 'examples'))).toBe(false);
   });
 });
 
