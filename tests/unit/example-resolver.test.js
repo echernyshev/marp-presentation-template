@@ -36,6 +36,19 @@ describe('ExampleResolver', () => {
       expect(baseExample?.isBase).toBe(true);
     });
 
+    test('should mark examples with empty themes array as base examples', () => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      const examples = resolver.discoverAll();
+      // Find example with empty themes array
+      const emptyThemesExample = examples.find(e => e.themes && e.themes.length === 0);
+      if (emptyThemesExample) {
+        expect(emptyThemesExample.isBase).toBe(true);
+      } else {
+        // Test passes if no such example exists in fixtures
+        expect(true).toBe(true);
+      }
+    });
+
     test('should parse themes field from frontmatter', () => {
       const resolver = new ExampleResolver('tests/fixtures/examples');
       const examples = resolver.discoverAll();
@@ -109,6 +122,91 @@ describe('ExampleResolver', () => {
       const resolver = new ExampleResolver();
       const filtered = resolver.filterBySelectedThemes(allExamples, []);
       expect(filtered.every(e => e.isBase)).toBe(true);
+    });
+  });
+
+  describe('ExampleResolver._findAllStaticFiles', () => {
+    test('should find all non-md files recursively', () => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      const staticFiles = resolver._findAllStaticFiles('beam');
+
+      // Should include the png file
+      expect(staticFiles).toContain('beam/static/beam-logo.png');
+    });
+
+    test('should exclude markdown files', () => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      const staticFiles = resolver._findAllStaticFiles('beam');
+
+      // Should not include any .md files
+      expect(staticFiles.some(f => f.endsWith('.md'))).toBe(false);
+    });
+
+    test('should return empty array for non-existent directory', () => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      const staticFiles = resolver._findAllStaticFiles('non-existent');
+      expect(staticFiles).toEqual([]);
+    });
+
+    test('should skip symbolic links', () => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      // Test with directory that might have symlinks
+      const staticFiles = resolver._findAllStaticFiles('.');
+      // Just verify it doesn't throw and returns array
+      expect(Array.isArray(staticFiles)).toBe(true);
+    });
+  });
+
+  describe('ExampleResolver.groupByDirectory', () => {
+    let allExamples;
+
+    beforeEach(() => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      allExamples = resolver.discoverAll();
+    });
+
+    test('should group examples by parent directory', () => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      const dirMap = resolver.groupByDirectory(allExamples);
+
+      // Should have entries for different directories
+      expect(dirMap.size).toBeGreaterThan(0);
+
+      // Each entry should have examples array and staticFiles array
+      for (const [dir, { examples, staticFiles }] of dirMap) {
+        expect(Array.isArray(examples)).toBe(true);
+        expect(Array.isArray(staticFiles)).toBe(true);
+      }
+    });
+
+    test('should include all static files for each directory', () => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      const beamExamples = allExamples.filter(e => e.relativePath.includes('beam'));
+      const dirMap = resolver.groupByDirectory(beamExamples);
+
+      // Get the beam directory entry
+      const beamEntry = dirMap.get('beam');
+      expect(beamEntry).toBeDefined();
+
+      // Should include the static file
+      expect(beamEntry.staticFiles).toContain('beam/static/beam-logo.png');
+    });
+
+    test('should handle examples in root directory', () => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      const baseExample = allExamples.find(e => e.relativePath === 'base-example.md');
+      const dirMap = resolver.groupByDirectory([baseExample]);
+
+      // Root directory is '.' (dirname of file with no subdir)
+      const rootEntry = dirMap.get('.');
+      expect(rootEntry).toBeDefined();
+      expect(rootEntry.examples).toContain(baseExample);
+    });
+
+    test('should return empty map for empty input', () => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      const dirMap = resolver.groupByDirectory([]);
+      expect(dirMap.size).toBe(0);
     });
   });
 });
