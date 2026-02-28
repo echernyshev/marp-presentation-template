@@ -54,6 +54,18 @@ async function addThemesToExistingProject(targetPath, options = {}) {
       themes: themeNames || undefined
     });
 
+    // NEW: Prompt for examples after themes are added
+    let examplesCopied = 0;
+    if (copied.length > 0 && process.stdin.isTTY) {
+      console.log();
+      const examples = await command._promptExamples(copied);
+      if (examples.length > 0) {
+        const examplesSourceDir = path.join(__dirname, '../..', 'examples');
+        command._copyExamples(examples, resolvedPath, examplesSourceDir);
+        examplesCopied = examples.length;
+      }
+    }
+
     // Show summary
     const copiedNames = copied.map(t => t.name);
     console.log(`\nCopied themes: ${copiedNames.join(', ') || 'none'}`);
@@ -62,6 +74,9 @@ async function addThemesToExistingProject(targetPath, options = {}) {
     }
     if (conflicts.length > 0) {
       console.log(`Conflicts: ${conflicts.join(', ')}`);
+    }
+    if (examplesCopied > 0) {
+      console.log(`Examples copied: ${examplesCopied}`);
     }
 
     console.log();
