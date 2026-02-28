@@ -68,6 +68,15 @@ npm test
 node index.js test-project
 ```
 
+## Credits
+
+This project includes themes adapted from the following sources:
+
+- **MarpX themes** - [cunhapaulo/MarpX](https://github.com/cunhapaulo/MarpX)
+- **beam theme** - [rnd195/my-marp-themes](https://github.com/rnd195/my-marp-themes)
+
+Thank you to the original authors for their excellent work on Marp themes!
+
 ## License
 
 MIT
