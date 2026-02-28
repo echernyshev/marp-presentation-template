@@ -10,6 +10,7 @@ footer: "[Back to the outline](#3)"
 
 marp: true
 theme: socrates
+themes: [socrates]
 transition: cube
 
 size: 16:9
