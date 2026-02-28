@@ -1,6 +1,6 @@
 {
   "name": "create-marp-presentation",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Create a new Marp presentation project with one command. Manage themes quickly and easily with the CLI.",
   "bin": {
     "create-marp-presentation": "index.js"
