@@ -1,0 +1,27 @@
+/* @theme gaia-dark */
+/* A dark variant of the gaia theme */
+
+@import "gaia";
+
+:root {
+  --color-background: #1a1a1a;
+  --color-foreground: #ffffff;
+  --color-highlight: #4a9eff;
+}
+
+section {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-highlight);
+}
+
+code {
+  background-color: rgba(74, 158, 255, 0.1);
+}
+
+strong {
+  color: var(--color-highlight);
+}

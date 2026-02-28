@@ -1,0 +1,22 @@
+/* @theme uncover-minimal */
+/* A minimal variant of the uncover theme */
+
+@import "uncover";
+
+section {
+  --uncover-transition: all 0.3s ease;
+}
+
+h1, h2, h3 {
+  font-weight: 300;
+  letter-spacing: 0.05em;
+}
+
+/* Simplified list styling */
+ul, ol {
+  padding-left: 1.5em;
+}
+
+li {
+  margin-bottom: 0.3em;
+}

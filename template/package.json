@@ -9,7 +9,16 @@
     "build:pptx": "marp presentation.md -o output/presentation.pptx --allow-local-files && npm run copy:static",
     "build:all": "npm run build:html && npm run build:pdf && npm run build:pptx",
     "copy:static": "node scripts/copy-static.js",
-    "clean": "rimraf output"
+    "clean": "rimraf output",
+    "theme": "node scripts/theme-cli.js",
+    "theme:add": "npx create-marp-presentation theme:add .",
+    "theme:list": "node scripts/theme-cli.js list",
+    "theme:create": "node scripts/theme-cli.js create",
+    "theme:set": "node scripts/theme-cli.js set"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.10.1",
+    "gray-matter": "^4.0.3"
   },
   "devDependencies": {
     "@marp-team/marp-cli": "^4.1.2",
@@ -18,5 +27,8 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "marp": {
+    "themeSet": "./themes"
   }
 }

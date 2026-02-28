@@ -3,15 +3,9 @@ node_modules/
 package-lock.json
 
 # Test outputs
+tests/output/
 tests/fixtures/
 *.log
-
-# Test projects (created during integration testing)
-test-integration/
-test-presentation/
-test-install/
-existing-project/
-test-project/
 
 # Coverage
 coverage/
