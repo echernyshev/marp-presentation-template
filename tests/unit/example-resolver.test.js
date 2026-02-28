@@ -42,5 +42,26 @@ describe('ExampleResolver', () => {
       const beamExample = examples.find(e => e.relativePath.includes('beam'));
       expect(beamExample?.themes).toContain('beam');
     });
+
+    test('should not include sibling directories as static assets for root-level examples', () => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      const examples = resolver.discoverAll();
+      const baseExample = examples.find(e => e.relativePath === 'base-example.md');
+
+      // base-example.md is at root level, so it should have NO static assets
+      // (sibling directories like beam/ and marpx/ should NOT be included)
+      expect(baseExample?.staticAssets).toEqual([]);
+    });
+
+    test('should include static assets from same directory as example', () => {
+      const resolver = new ExampleResolver('tests/fixtures/examples');
+      const examples = resolver.discoverAll();
+      const beamExample = examples.find(e => e.relativePath.includes('beam'));
+
+      // beam-example.md is at beam/beam-example.md
+      // static asset is at beam/static/beam-logo.png
+      // relative path from examplesDir is beam/static/beam-logo.png
+      expect(beamExample?.staticAssets).toContain('beam/static/beam-logo.png');
+    });
   });
 });
