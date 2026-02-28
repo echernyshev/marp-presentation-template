@@ -12,7 +12,8 @@
     "docs/",
     "template/",
     "template-optional/",
-    "themes/"
+    "themes/",
+    "examples/"
   ],
   "scripts": {
     "test": "jest"
