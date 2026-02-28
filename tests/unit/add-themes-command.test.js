@@ -558,4 +558,134 @@ describe('AddThemesCommand', () => {
       expect(result.copied[0].name).toBe('custom');
     });
   });
+
+  describe('_resolveConflictsInteractive', () => {
+    const { Prompts } = require('../../lib/prompts');
+
+    beforeEach(() => {
+      jest.spyOn(Prompts, 'promptConflictResolution').mockImplementation();
+      jest.spyOn(Prompts, 'promptSingleConflict').mockImplementation();
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    describe('single conflict resolution', () => {
+      test('should skip single conflict when user chooses skip', async () => {
+        const command = new AddThemesCommand();
+        const conflicts = ['my-theme'];
+
+        Prompts.promptConflictResolution.mockResolvedValue('skip');
+
+        const result = await command._resolveConflictsInteractive(conflicts, false);
+
+        expect(result.overwrite).toEqual([]);
+        expect(Prompts.promptSingleConflict).not.toHaveBeenCalled();
+      });
+
+      test('should overwrite single conflict when user chooses overwrite', async () => {
+        const command = new AddThemesCommand();
+        const conflicts = ['my-theme'];
+
+        Prompts.promptConflictResolution.mockResolvedValue('overwrite');
+
+        const result = await command._resolveConflictsInteractive(conflicts, false);
+
+        expect(result.overwrite).toEqual(['my-theme']);
+        expect(Prompts.promptSingleConflict).not.toHaveBeenCalled();
+      });
+
+      test('should cancel when user chooses cancel for single conflict', async () => {
+        const command = new AddThemesCommand();
+        const conflicts = ['my-theme'];
+
+        Prompts.promptConflictResolution.mockResolvedValue('cancel');
+
+        const result = await command._resolveConflictsInteractive(conflicts, false);
+
+        expect(result.overwrite).toEqual([]);
+        expect(Prompts.promptSingleConflict).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('multiple conflict resolution', () => {
+      test('should skip all conflicts when user chooses skip-all', async () => {
+        const command = new AddThemesCommand();
+        const conflicts = ['theme-a', 'theme-b', 'theme-c'];
+
+        Prompts.promptConflictResolution.mockResolvedValue('skip-all');
+
+        const result = await command._resolveConflictsInteractive(conflicts, false);
+
+        expect(result.overwrite).toEqual([]);
+        expect(Prompts.promptSingleConflict).not.toHaveBeenCalled();
+      });
+
+      test('should overwrite all conflicts when user chooses overwrite-all', async () => {
+        const command = new AddThemesCommand();
+        const conflicts = ['theme-a', 'theme-b'];
+
+        Prompts.promptConflictResolution.mockResolvedValue('overwrite-all');
+
+        const result = await command._resolveConflictsInteractive(conflicts, false);
+
+        expect(result.overwrite).toEqual(['theme-a', 'theme-b']);
+        expect(Prompts.promptSingleConflict).not.toHaveBeenCalled();
+      });
+
+      test('should cancel when user chooses cancel for multiple conflicts', async () => {
+        const command = new AddThemesCommand();
+        const conflicts = ['theme-a', 'theme-b'];
+
+        Prompts.promptConflictResolution.mockResolvedValue('cancel');
+
+        const result = await command._resolveConflictsInteractive(conflicts, false);
+
+        expect(result.overwrite).toEqual([]);
+        expect(Prompts.promptSingleConflict).not.toHaveBeenCalled();
+      });
+
+      test('should prompt for each conflict when user chooses choose-each', async () => {
+        const command = new AddThemesCommand();
+        const conflicts = ['theme-a', 'theme-b', 'theme-c'];
+
+        Prompts.promptConflictResolution.mockResolvedValue('choose-each');
+        Prompts.promptSingleConflict
+          .mockResolvedValueOnce('skip')      // theme-a
+          .mockResolvedValueOnce('overwrite') // theme-b
+          .mockResolvedValueOnce('skip');      // theme-c
+
+        const result = await command._resolveConflictsInteractive(conflicts, false);
+
+        expect(result.overwrite).toEqual(['theme-b']);
+        expect(Prompts.promptSingleConflict).toHaveBeenCalledTimes(3);
+      });
+
+      test('should stop prompting when user cancels during choose-each', async () => {
+        const command = new AddThemesCommand();
+        const conflicts = ['theme-a', 'theme-b', 'theme-c'];
+
+        Prompts.promptConflictResolution.mockResolvedValue('choose-each');
+        Prompts.promptSingleConflict
+          .mockResolvedValueOnce('overwrite') // theme-a
+          .mockResolvedValueOnce('cancel');   // theme-b (stops here)
+
+        const result = await command._resolveConflictsInteractive(conflicts, false);
+
+        expect(result.overwrite).toEqual(['theme-a']);
+        expect(Prompts.promptSingleConflict).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    test('should overwrite all when force option is true', async () => {
+      const command = new AddThemesCommand();
+      const conflicts = ['theme-a', 'theme-b'];
+
+      const result = await command._resolveConflictsInteractive(conflicts, true);
+
+      expect(result.overwrite).toEqual(['theme-a', 'theme-b']);
+      expect(Prompts.promptConflictResolution).not.toHaveBeenCalled();
+    });
+  });
 });
