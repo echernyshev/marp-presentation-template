@@ -11,8 +11,7 @@ const { AddThemesCommand } = require('../../lib/add-themes-command');
 const { Prompts } = require('../../lib/prompts');
 const { ThemeManager } = require('../../lib/theme-manager');
 
-const { copyDir, copyOptionalFiles } = require('../utils/file-utils');
-const { askCreateExamples } = require('../utils/prompt-utils');
+const { copyDir } = require('../utils/file-utils');
 
 /**
  * Validate project name
@@ -81,9 +80,6 @@ async function createProject(projectName, options = {}) {
   }
   console.log();
 
-  // Ask about example slides
-  const createExamples = await askCreateExamples();
-
   // Create project directory
   fs.mkdirSync(projectPath, { recursive: true });
 
@@ -100,13 +96,6 @@ async function createProject(projectName, options = {}) {
   ThemeManager.ensureThemeSetConfig(projectPath);
 
   console.log('✓ Project created');
-
-  // Copy optional files
-  if (createExamples) {
-    copyOptionalFiles(projectPath);
-    console.log('✓ Example slides added');
-    console.log('✓ Demo image added to static/');
-  }
 
   // Copy theme management documentation
   const themeDocsSource = path.join(__dirname, '../..', 'docs', 'theme-management.md');
@@ -131,6 +120,17 @@ async function createProject(projectName, options = {}) {
       themes: null  // Triggers built-in prompt
     });
     copied = result.copied;
+
+    // Prompt for examples after themes are selected
+    if (copied.length > 0) {
+      console.log();
+      const examples = await command._promptExamples(copied);
+      if (examples.length > 0) {
+        const examplesSourceDir = path.join(__dirname, '../..', 'examples');
+        command._copyExamples(examples, projectPath, examplesSourceDir);
+        console.log('✓ Example slides added');
+      }
+    }
   }
   // Non-interactive mode: skip theme addition entirely
 

@@ -688,4 +688,150 @@ describe('AddThemesCommand', () => {
       expect(Prompts.promptConflictResolution).not.toHaveBeenCalled();
     });
   });
+
+  describe('AddThemesCommand._copyExamples', () => {
+    const tempDir = '/tmp/test-examples-copy';
+    const fixturesDir = path.join(__dirname, '../fixtures/examples');
+
+    beforeAll(() => {
+      // Ensure fixtures exist
+      if (!fs.existsSync(fixturesDir)) {
+        fs.mkdirSync(fixturesDir, { recursive: true });
+      }
+    });
+
+    afterEach(() => {
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    test('should have _copyExamples method', () => {
+      const command = new AddThemesCommand();
+      expect(typeof command._copyExamples).toBe('function');
+    });
+
+    test('should copy examples to project directory preserving structure', () => {
+      fs.mkdirSync(tempDir, { recursive: true });
+
+      const { ExampleResolver } = require('../../lib/example-resolver');
+      const resolver = new ExampleResolver(fixturesDir);
+      const allExamples = resolver.discoverAll();
+
+      const command = new AddThemesCommand();
+      command._copyExamples(allExamples, tempDir, fixturesDir);
+
+      // Verify examples directory exists
+      expect(fs.existsSync(path.join(tempDir, 'examples'))).toBe(true);
+
+      // Verify at least base example was copied
+      expect(fs.existsSync(path.join(tempDir, 'examples', 'base-example.md'))).toBe(true);
+    });
+
+    test('should do nothing if examples array is empty', () => {
+      fs.mkdirSync(tempDir, { recursive: true });
+
+      const command = new AddThemesCommand();
+      expect(() => command._copyExamples([], tempDir, fixturesDir)).not.toThrow();
+      expect(fs.existsSync(path.join(tempDir, 'examples'))).toBe(false);
+    });
+  });
+
+  describe('AddThemesCommand._promptExamples', () => {
+    const { ExampleResolver } = require('../../lib/example-resolver');
+
+    test('should return empty array when user declines', async () => {
+      const command = new AddThemesCommand({
+        prompts: {
+          copyExamples: async () => false
+        }
+      });
+
+      // Create mock selectedThemes
+      const selectedThemes = [
+        new Theme('beam', '/path/beam.css', 'css', [])
+      ];
+
+      const result = await command._promptExamples(selectedThemes);
+      expect(result).toEqual([]);
+    });
+
+    test('should return empty array when not in interactive mode', async () => {
+      const command = new AddThemesCommand({
+        interactive: false
+      });
+
+      const selectedThemes = [
+        new Theme('beam', '/path/beam.css', 'css', [])
+      ];
+
+      const result = await command._promptExamples(selectedThemes);
+      expect(result).toEqual([]);
+    });
+
+    test('should return filtered examples when user accepts', async () => {
+      const fixturesDir = path.join(__dirname, '../fixtures/examples');
+
+      // Ensure fixtures exist
+      if (!fs.existsSync(fixturesDir)) {
+        fs.mkdirSync(fixturesDir, { recursive: true });
+      }
+
+      const command = new AddThemesCommand({
+        prompts: {
+          copyExamples: async () => true
+        }
+      });
+
+      // Create mock selectedThemes
+      const selectedThemes = [
+        new Theme('beam', '/path/beam.css', 'css', [])
+      ];
+
+      // Mock ExampleResolver to return test data
+      const mockDiscoverAll = jest.spyOn(ExampleResolver.prototype, 'discoverAll')
+        .mockReturnValue([
+          { relativePath: 'base.md', isBase: true, themes: [] },
+          { relativePath: 'beam/demo.md', isBase: false, themes: ['beam'] }
+        ]);
+
+      const mockFilter = jest.spyOn(ExampleResolver.prototype, 'filterBySelectedThemes')
+        .mockReturnValue([
+          { relativePath: 'base.md', isBase: true, themes: [] },
+          { relativePath: 'beam/demo.md', isBase: false, themes: ['beam'] }
+        ]);
+
+      const result = await command._promptExamples(selectedThemes);
+
+      expect(result).toEqual([
+        { relativePath: 'base.md', isBase: true, themes: [] },
+        { relativePath: 'beam/demo.md', isBase: false, themes: ['beam'] }
+      ]);
+
+      mockDiscoverAll.mockRestore();
+      mockFilter.mockRestore();
+    });
+
+    test('should return empty array when no examples available', async () => {
+      const command = new AddThemesCommand({
+        prompts: {
+          copyExamples: async () => true
+        }
+      });
+
+      const selectedThemes = [
+        new Theme('beam', '/path/beam.css', 'css', [])
+      ];
+
+      // Mock ExampleResolver to return empty array
+      const mockDiscoverAll = jest.spyOn(ExampleResolver.prototype, 'discoverAll')
+        .mockReturnValue([]);
+
+      const result = await command._promptExamples(selectedThemes);
+
+      expect(result).toEqual([]);
+
+      mockDiscoverAll.mockRestore();
+    });
+  });
 });
