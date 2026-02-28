@@ -7,6 +7,7 @@ jest.mock('@inquirer/prompts', () => ({
   select: jest.fn(),
   input: jest.fn(),
   confirm: jest.fn(),
+  prompt: jest.fn(),
   Separator: class Separator {}
 }));
 
@@ -326,6 +327,30 @@ describe('Prompts', () => {
       inquirer.confirm.mockResolvedValue(true);
       const result = await Prompts.confirm('Proceed?', false);
       expect(result).toBe(true);
+    });
+  });
+
+  describe('promptCopyExamples', () => {
+    test('should prompt user to copy examples with default false', async () => {
+      inquirer.prompt = jest.fn().mockResolvedValue({ shouldCopy: false });
+
+      const result = await Prompts.promptCopyExamples();
+      expect(result).toEqual({ shouldCopyExamples: false });
+      expect(inquirer.prompt).toHaveBeenCalledWith([
+        {
+          type: 'confirm',
+          name: 'shouldCopy',
+          message: 'Copy examples for selected themes?',
+          default: false
+        }
+      ]);
+    });
+
+    test('should return true when user accepts', async () => {
+      inquirer.prompt = jest.fn().mockResolvedValue({ shouldCopy: true });
+
+      const result = await Prompts.promptCopyExamples();
+      expect(result).toEqual({ shouldCopyExamples: true });
     });
   });
 });
