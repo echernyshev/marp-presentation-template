@@ -30,8 +30,8 @@ describe('Prompts', () => {
       expect(inquirer.checkbox).toHaveBeenCalledWith({
         message: 'Select themes to add:',
         choices: [
-          { name: 'beam', value: 'beam', checked: false },
-          { name: 'gaia-dark', value: 'gaia-dark', checked: false }
+          { name: 'beam - Beamer theme', value: 'beam', checked: false },
+          { name: 'gaia-dark - Dark gaia', value: 'gaia-dark', checked: false }
         ]
       });
     });
@@ -52,7 +52,22 @@ describe('Prompts', () => {
       expect(inquirer.checkbox).toHaveBeenCalledWith({
         message: 'Select themes to add:',
         choices: [
-          { name: 'beam', value: 'beam', checked: false }
+          { name: 'beam - Beamer theme', value: 'beam', checked: false }
+        ]
+      });
+    });
+
+    test('should show just theme name when no description', async () => {
+      const availableThemes = [
+        { name: 'no-desc-theme', description: null }
+      ];
+      inquirer.checkbox.mockResolvedValue(['no-desc-theme']);
+
+      await Prompts.promptThemes(availableThemes);
+      expect(inquirer.checkbox).toHaveBeenCalledWith({
+        message: 'Select themes to add:',
+        choices: [
+          { name: 'no-desc-theme', value: 'no-desc-theme', checked: false }
         ]
       });
     });

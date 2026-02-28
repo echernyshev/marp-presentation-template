@@ -109,6 +109,52 @@ describe('ThemeResolver.extractDependencies', () => {
   });
 });
 
+describe('ThemeResolver.extractDescription', () => {
+  test('should extract description from CSS comment directive', () => {
+    const css = '/* @theme my-custom-theme */\n/* @description A cool theme */\n:root { color: red; }';
+    const result = ThemeResolver.extractDescription(css);
+    expect(result).toBe('A cool theme');
+  });
+
+  test('should extract description with @theme in same comment block', () => {
+    const css = `/*
+      * @theme my-theme
+      * @description My awesome theme description
+      */\n:root { }`;
+    const result = ThemeResolver.extractDescription(css);
+    expect(result).toBe('My awesome theme description');
+  });
+
+  test('should trim whitespace from description', () => {
+    const css = '/* @theme test */\n/* @description   A theme with spaces   */\n:root { }';
+    const result = ThemeResolver.extractDescription(css);
+    expect(result).toBe('A theme with spaces');
+  });
+
+  test('should return null when no description directive found', () => {
+    const css = '/* @theme my-theme */\n:root { color: red; }';
+    const result = ThemeResolver.extractDescription(css);
+    expect(result).toBeNull();
+  });
+
+  test('should extract description from multi-line comment with other content', () => {
+    const css = `/*
+ * @theme complex
+ * Author: Test Author
+ * @description A theme with a longer description
+ * License: MIT
+ */`;
+    const result = ThemeResolver.extractDescription(css);
+    expect(result).toBe('A theme with a longer description');
+  });
+
+  test('should handle description with special characters', () => {
+    const css = '/* @theme special */\n/* @description A theme with dashes, dots, and (parentheses) */';
+    const result = ThemeResolver.extractDescription(css);
+    expect(result).toBe('A theme with dashes, dots, and (parentheses)');
+  });
+});
+
 describe('ThemeResolver.resolveTheme', () => {
   const fixturesDir = path.join(__dirname, '..', 'fixtures', 'themes');
   const tempDir = path.join(__dirname, '..', 'temp');
@@ -159,6 +205,35 @@ describe('ThemeResolver.resolveTheme', () => {
   test('should throw for non-existent file', () => {
     const cssPath = path.join(tempDir, 'non-existent.css');
     expect(() => ThemeResolver.resolveTheme(cssPath)).toThrow();
+  });
+
+  test('should extract description when present', () => {
+    const cssPath = path.join(tempDir, 'described.css');
+    fs.writeFileSync(cssPath, '/* @theme described */\n/* @description A theme with description */\n:root { }');
+
+    const theme = ThemeResolver.resolveTheme(cssPath);
+    expect(theme.name).toBe('described');
+    expect(theme.description).toBe('A theme with description');
+  });
+
+  test('should have null description when not present', () => {
+    const cssPath = path.join(tempDir, 'no-desc.css');
+    fs.writeFileSync(cssPath, '/* @theme no-desc */\n:root { }');
+
+    const theme = ThemeResolver.resolveTheme(cssPath);
+    expect(theme.name).toBe('no-desc');
+    expect(theme.description).toBeNull();
+  });
+
+  test('should extract description from multi-line comment block', () => {
+    const cssPath = path.join(tempDir, 'multi-line.css');
+    fs.writeFileSync(cssPath, `/*
+      * @theme multi-line
+      * @description Multi-line description here
+      */\n:root { }`);
+
+    const theme = ThemeResolver.resolveTheme(cssPath);
+    expect(theme.description).toBe('Multi-line description here');
   });
 });
 
