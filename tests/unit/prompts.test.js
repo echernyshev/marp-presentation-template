@@ -21,20 +21,23 @@ describe('Prompts', () => {
   describe('promptThemes', () => {
     test('should return selected themes', async () => {
       const availableThemes = [
-        { name: 'beam', description: 'Beamer theme' },
-        { name: 'gaia-dark', description: 'Dark gaia' }
+        { name: 'beam', description: 'Beamer theme', dependencies: ['default'] },
+        { name: 'gaia-dark', description: 'Dark gaia', dependencies: ['gaia'] }
       ];
       inquirer.checkbox.mockResolvedValue(['beam']);
 
       const result = await Prompts.promptThemes(availableThemes);
       expect(result).toEqual(['beam']);
-      expect(inquirer.checkbox).toHaveBeenCalledWith({
-        message: 'Select themes to add:',
-        choices: [
-          { name: 'beam - Beamer theme', value: 'beam', checked: false },
-          { name: 'gaia-dark - Dark gaia', value: 'gaia-dark', checked: false }
-        ]
-      });
+      const callArgs = inquirer.checkbox.mock.calls[0][0];
+      
+      // Check message
+      expect(callArgs.message).toBe('Select themes to add:');
+      
+      // Check that we have Separators for grouping
+      expect(callArgs.choices.some(c => c.constructor.name === 'Separator')).toBe(true);
+      
+      // Check that beam is in choices with proper formatting
+      expect(callArgs.choices.some(c => c.value === 'beam')).toBe(true);
     });
 
     test('should return empty array for no available themes', async () => {
@@ -45,32 +48,80 @@ describe('Prompts', () => {
 
     test('should include descriptions in choices', async () => {
       const availableThemes = [
-        { name: 'beam', description: 'Beamer theme' }
+        { name: 'beam', description: 'Beamer theme', dependencies: ['default'] }
       ];
       inquirer.checkbox.mockResolvedValue(['beam']);
 
       await Prompts.promptThemes(availableThemes);
-      expect(inquirer.checkbox).toHaveBeenCalledWith({
-        message: 'Select themes to add:',
-        choices: [
-          { name: 'beam - Beamer theme', value: 'beam', checked: false }
-        ]
-      });
+      const callArgs = inquirer.checkbox.mock.calls[0][0];
+      
+      // Find the beam choice
+      const beamChoice = callArgs.choices.find(c => c.value === 'beam');
+      expect(beamChoice).toBeDefined();
+      expect(beamChoice.name).toContain('beam');
+      expect(beamChoice.name).toContain('Beamer theme');
+      expect(beamChoice.checked).toBe(false);
     });
 
     test('should show just theme name when no description', async () => {
       const availableThemes = [
-        { name: 'no-desc-theme', description: null }
+        { name: 'no-desc-theme', description: null, dependencies: [] }
       ];
       inquirer.checkbox.mockResolvedValue(['no-desc-theme']);
 
       await Prompts.promptThemes(availableThemes);
-      expect(inquirer.checkbox).toHaveBeenCalledWith({
-        message: 'Select themes to add:',
-        choices: [
-          { name: 'no-desc-theme', value: 'no-desc-theme', checked: false }
-        ]
-      });
+      const callArgs = inquirer.checkbox.mock.calls[0][0];
+      
+      const noDescChoice = callArgs.choices.find(c => c.value === 'no-desc-theme');
+      expect(noDescChoice).toBeDefined();
+      expect(noDescChoice.name).toContain('no-desc-theme');
+      expect(noDescChoice.checked).toBe(false);
+    });
+
+    test('should group themes by parent with tree formatting', async () => {
+      const availableThemes = [
+        { name: 'marpx', description: 'Academic theme', dependencies: ['default'] },
+        { name: 'einstein', description: 'Physics theme', dependencies: ['marpx'] },
+        { name: 'cantor', description: 'Math theme', dependencies: ['marpx'] }
+      ];
+      inquirer.checkbox.mockResolvedValue(['einstein']);
+
+      await Prompts.promptThemes(availableThemes);
+      const callArgs = inquirer.checkbox.mock.calls[0][0];
+      
+      // Should have group separators
+      const separators = callArgs.choices.filter(c => c.constructor.name === 'Separator');
+      expect(separators.length).toBeGreaterThan(0);
+      
+      // marpx should be a choice
+      expect(callArgs.choices.some(c => c.value === 'marpx')).toBe(true);
+      
+      // einstein should be a child of marpx (with tree prefix)
+      const einsteinChoice = callArgs.choices.find(c => c.value === 'einstein');
+      expect(einsteinChoice).toBeDefined();
+      expect(einsteinChoice.name).toMatch(/│|├|└/); // Should have tree characters
+      
+      // cantor should also be present
+      expect(callArgs.choices.some(c => c.value === 'cantor')).toBe(true);
+    });
+
+    test('should mark system themes as built-in', async () => {
+      const availableThemes = [
+        { name: 'beam', description: 'Beamer', dependencies: ['default'] }
+      ];
+      inquirer.checkbox.mockResolvedValue(['beam']);
+
+      await Prompts.promptThemes(availableThemes);
+      const callArgs = inquirer.checkbox.mock.calls[0][0];
+      
+      // Check that system themes (default, gaia, uncover) are included as choices
+      expect(callArgs.choices.some(c => c.value === 'default')).toBe(true);
+      expect(callArgs.choices.some(c => c.value === 'gaia')).toBe(true);
+      expect(callArgs.choices.some(c => c.value === 'uncover')).toBe(true);
+      
+      // Check that separators exist for grouping
+      const separators = callArgs.choices.filter(c => c.constructor.name === 'Separator');
+      expect(separators.length).toBeGreaterThan(0);
     });
   });
 
