@@ -119,6 +119,20 @@ describe('Prompts', () => {
       expect(callArgs.choices.some(c => c.value === 'gaia')).toBe(true);
       expect(callArgs.choices.some(c => c.value === 'uncover')).toBe(true);
       
+      // Check that system themes are marked as disabled
+      const defaultChoice = callArgs.choices.find(c => c.value === 'default');
+      expect(defaultChoice.disabled).toBe('Built-in theme (already available in Marp)');
+      
+      const gaiaChoice = callArgs.choices.find(c => c.value === 'gaia');
+      expect(gaiaChoice.disabled).toBe('Built-in theme (already available in Marp)');
+      
+      const uncoverChoice = callArgs.choices.find(c => c.value === 'uncover');
+      expect(uncoverChoice.disabled).toBe('Built-in theme (already available in Marp)');
+      
+      // Regular themes should not be disabled
+      const beamChoice = callArgs.choices.find(c => c.value === 'beam');
+      expect(beamChoice.disabled).toBeUndefined();
+      
       // Check that separators exist for grouping
       const separators = callArgs.choices.filter(c => c.constructor.name === 'Separator');
       expect(separators.length).toBeGreaterThan(0);
