@@ -14,7 +14,8 @@
     "theme:add": "npx create-marp-presentation theme:add .",
     "theme:list": "node scripts/theme-cli.js list",
     "theme:create": "node scripts/theme-cli.js create",
-    "theme:set": "node scripts/theme-cli.js set"
+    "theme:set": "node scripts/theme-cli.js set",
+    "theme:select": "node scripts/theme-cli.js select"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.10.1",

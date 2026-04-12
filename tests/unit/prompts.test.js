@@ -159,6 +159,41 @@ describe('Prompts', () => {
     test('should throw if no themes available', async () => {
       await expect(Prompts.promptActiveTheme([])).rejects.toThrow('No themes available');
     });
+
+    test('should pass activeTheme as default and mark with description when provided and in list', async () => {
+      inquirer.select.mockResolvedValue('beam');
+      const result = await Prompts.promptActiveTheme(['default', 'beam', 'gaia'], 'beam');
+      expect(result).toBe('beam');
+      expect(inquirer.select).toHaveBeenCalledWith({
+        message: 'Select active theme:',
+        choices: [
+          'default',
+          { value: 'beam', name: 'beam (current)' },
+          'gaia'
+        ],
+        default: 'beam'
+      });
+    });
+
+    test('should not set default when activeTheme is not in list', async () => {
+      inquirer.select.mockResolvedValue('gaia');
+      const result = await Prompts.promptActiveTheme(['default', 'gaia'], 'uncover');
+      expect(result).toBe('gaia');
+      expect(inquirer.select).toHaveBeenCalledWith({
+        message: 'Select active theme:',
+        choices: ['default', 'gaia']
+      });
+    });
+
+    test('should not set default when activeTheme is null', async () => {
+      inquirer.select.mockResolvedValue('default');
+      const result = await Prompts.promptActiveTheme(['default', 'gaia'], null);
+      expect(result).toBe('default');
+      expect(inquirer.select).toHaveBeenCalledWith({
+        message: 'Select active theme:',
+        choices: ['default', 'gaia']
+      });
+    });
   });
 
   describe('promptNewThemeName', () => {

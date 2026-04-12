@@ -52,6 +52,7 @@ Commands:
   create <name>        Create a new theme
   set <theme>          Set active theme in presentation.md
   switch <theme>       Alias for 'set' - change active theme
+  select               Interactively select and set active theme
   sync                 Sync installed themes to VSCode settings
   help                 Show this help message
 
@@ -219,6 +220,31 @@ async function main() {
         if (error.name === 'ThemeNotFoundError') {
           console.error(`\nError: ${error.message}\n`);
           console.log('Run "npm run theme list" to see available themes.\n');
+          process.exit(1);
+        }
+        if (error.name === 'PresentationNotFoundError') {
+          console.error(`\nError: presentation.md not found in ${projectRoot}\n`);
+          process.exit(1);
+        }
+        console.error(`\nError: ${error.message}\n`);
+        process.exit(1);
+      }
+      break;
+
+    case 'select':
+      try {
+        const manager = new ThemeManager(projectRoot);
+        const themes = manager.listThemes();
+        const activeTheme = manager.getActiveTheme();
+        const selected = await Prompts.promptActiveTheme(themes, activeTheme);
+        manager.setActiveTheme(selected);
+        manager.updateVSCodeSettings();
+        console.log(`\n✓ Theme set to "${selected}" in presentation.md`);
+        console.log('Next steps:');
+        console.log('  npm run dev  # Start live preview\n');
+      } catch (error) {
+        if (error.name === 'ThemeNotFoundError') {
+          console.error(`\nError: ${error.message}\n`);
           process.exit(1);
         }
         if (error.name === 'PresentationNotFoundError') {
