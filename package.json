@@ -16,7 +16,8 @@
     "examples/"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [
     "marp",
@@ -45,7 +46,23 @@
       "**/tests/**/*.test.js"
     ],
     "maxWorkers": 1,
-    "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"]
+    "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"],
+    "collectCoverageFrom": [
+      "index.js",
+      "cli/**/*.js",
+      "lib/**/*.js",
+      "template/scripts/**/*.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "text-summary", "lcov", "html"],
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 84,
+        "lines": 73,
+        "statements": 73
+      }
+    }
   },
   "dependencies": {
     "@inquirer/prompts": "^7.10.1",
