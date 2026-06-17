@@ -3,11 +3,7 @@
 /**
  * theme-cli.js - CLI for managing Marp themes in a project
  *
- * This script provides commands to:
- * - List installed themes
- * - Create new themes
- * - Update presentation.md with selected theme
- * - Sync themes to VSCode settings
+ * Commands: list, create, set/switch, select, sync, help
  */
 
 const fs = require('fs');
@@ -29,16 +25,9 @@ const {
   PresentationNotFoundError
 } = require('./lib/errors');
 
-// Get command from arguments
-const command = process.argv[2] || 'help';
-const args = process.argv.slice(3);
-
-// Paths
-const projectRoot = process.cwd();
-const templatePath = path.join(__dirname, '..');
-
 /**
  * Show help message
+ * @returns {number} 0
  */
 function showHelp() {
   console.log(`
@@ -68,12 +57,15 @@ Examples:
 Note:
   Run "npm run theme:add" to add themes from the theme library.
 `);
+  return 0;
 }
 
 /**
  * List installed themes
+ * @param {string} projectRoot
+ * @returns {Promise<number>} 0
  */
-async function listThemes() {
+async function listThemes(projectRoot) {
   console.log('\n=== Installed Themes ===\n');
 
   const projectThemesPath = path.join(projectRoot, 'themes');
@@ -99,16 +91,20 @@ async function listThemes() {
     }
     console.log();
   }
+  return 0;
 }
 
 /**
  * Create a new theme
+ * @param {string} themeName
+ * @param {string} projectRoot
+ * @returns {Promise<number>} Exit code
  */
-async function createTheme(themeName) {
+async function createTheme(themeName, projectRoot) {
   if (!themeName) {
     console.error('\nError: Theme name is required.\n');
     console.log('Usage: npm run theme create <theme-name>\n');
-    process.exit(1);
+    return 1;
   }
 
   const manager = new ThemeManager(projectRoot);
@@ -145,16 +141,19 @@ async function createTheme(themeName) {
     console.log('Next steps:');
     console.log(`  1. Edit ${result.path} to customize the theme`);
     console.log(`  2. Run "npm run theme set ${themeName}" to use it in your presentation\n`);
+    return 0;
   } catch (error) {
     console.error(`\nError: ${error.message}\n`);
-    process.exit(1);
+    return 1;
   }
 }
 
 /**
  * Sync VSCode settings with installed themes
+ * @param {string} projectRoot
+ * @returns {Promise<number>} Exit code
  */
-async function syncThemes() {
+async function syncThemes(projectRoot) {
   const projectThemesPath = path.join(projectRoot, 'themes');
   let installedThemes = [];
 
@@ -168,7 +167,7 @@ async function syncThemes() {
 
   if (installedThemes.length === 0) {
     console.log('\nNo themes installed to sync.\n');
-    return;
+    return 0;
   }
 
   // Build theme paths for VSCode
@@ -189,86 +188,124 @@ async function syncThemes() {
   console.log(`\n✓ Synced ${themePaths.length} theme(s) to VSCode settings:`);
   themePaths.forEach(p => console.log(`  - ${p}`));
   console.log();
+  return 0;
+}
+
+/**
+ * Set active theme (set/switch command)
+ * @param {string} themeName
+ * @param {string} projectRoot
+ * @returns {Promise<number>} Exit code
+ */
+async function setActiveThemeCommand(themeName, projectRoot) {
+  try {
+    const themeManager = new ThemeManager(projectRoot);
+    themeManager.setActiveTheme(themeName);
+    console.log(`\n✓ Theme set to "${themeName}" in presentation.md`);
+
+    // VSCode integration - sync ALL themes in project
+    themeManager.updateVSCodeSettings();
+
+    console.log('Next steps:');
+    console.log('  npm run dev  # Start live preview\n');
+    return 0;
+  } catch (error) {
+    if (error.name === 'ThemeNotFoundError') {
+      console.error(`\nError: ${error.message}\n`);
+      console.log('Run "npm run theme list" to see available themes.\n');
+      return 1;
+    }
+    if (error.name === 'PresentationNotFoundError') {
+      console.error(`\nError: presentation.md not found in ${projectRoot}\n`);
+      return 1;
+    }
+    console.error(`\nError: ${error.message}\n`);
+    return 1;
+  }
+}
+
+/**
+ * Interactively select and set active theme
+ * @param {string} projectRoot
+ * @returns {Promise<number>} Exit code
+ */
+async function selectTheme(projectRoot) {
+  try {
+    const manager = new ThemeManager(projectRoot);
+    const themes = manager.listThemes();
+    const activeTheme = manager.getActiveTheme();
+    const selected = await Prompts.promptActiveTheme(themes, activeTheme);
+    manager.setActiveTheme(selected);
+    manager.updateVSCodeSettings();
+    console.log(`\n✓ Theme set to "${selected}" in presentation.md`);
+    console.log('Next steps:');
+    console.log('  npm run dev  # Start live preview\n');
+    return 0;
+  } catch (error) {
+    if (error.name === 'ThemeNotFoundError') {
+      console.error(`\nError: ${error.message}\n`);
+      return 1;
+    }
+    if (error.name === 'PresentationNotFoundError') {
+      console.error(`\nError: presentation.md not found in ${projectRoot}\n`);
+      return 1;
+    }
+    console.error(`\nError: ${error.message}\n`);
+    return 1;
+  }
 }
 
 /**
  * Main CLI entry point
+ * @param {string[]} [argv=process.argv.slice(2)] - [command, ...args]
+ * @param {Object} [context]
+ * @param {string} [context.projectRoot=process.cwd()]
+ * @returns {Promise<number>} Exit code
  */
-async function main() {
+async function main(argv = process.argv.slice(2), context = {}) {
+  const command = argv[0] || 'help';
+  const args = argv.slice(1);
+  const projectRoot = context.projectRoot || process.cwd();
+
   switch (command) {
     case 'list':
-      await listThemes();
-      break;
+      return await listThemes(projectRoot);
 
     case 'create':
-      await createTheme(args[0]);
-      break;
+      return await createTheme(args[0], projectRoot);
 
     case 'set':
     case 'switch':
-      try {
-        const themeManager = new ThemeManager(projectRoot);
-        themeManager.setActiveTheme(args[0]);
-        console.log(`\n✓ Theme set to "${args[0]}" in presentation.md`);
-
-        // VSCode integration - sync ALL themes in project
-        themeManager.updateVSCodeSettings();
-
-        console.log('Next steps:');
-        console.log('  npm run dev  # Start live preview\n');
-      } catch (error) {
-        if (error.name === 'ThemeNotFoundError') {
-          console.error(`\nError: ${error.message}\n`);
-          console.log('Run "npm run theme list" to see available themes.\n');
-          process.exit(1);
-        }
-        if (error.name === 'PresentationNotFoundError') {
-          console.error(`\nError: presentation.md not found in ${projectRoot}\n`);
-          process.exit(1);
-        }
-        console.error(`\nError: ${error.message}\n`);
-        process.exit(1);
-      }
-      break;
+      return await setActiveThemeCommand(args[0], projectRoot);
 
     case 'select':
-      try {
-        const manager = new ThemeManager(projectRoot);
-        const themes = manager.listThemes();
-        const activeTheme = manager.getActiveTheme();
-        const selected = await Prompts.promptActiveTheme(themes, activeTheme);
-        manager.setActiveTheme(selected);
-        manager.updateVSCodeSettings();
-        console.log(`\n✓ Theme set to "${selected}" in presentation.md`);
-        console.log('Next steps:');
-        console.log('  npm run dev  # Start live preview\n');
-      } catch (error) {
-        if (error.name === 'ThemeNotFoundError') {
-          console.error(`\nError: ${error.message}\n`);
-          process.exit(1);
-        }
-        if (error.name === 'PresentationNotFoundError') {
-          console.error(`\nError: presentation.md not found in ${projectRoot}\n`);
-          process.exit(1);
-        }
-        console.error(`\nError: ${error.message}\n`);
-        process.exit(1);
-      }
-      break;
+      return await selectTheme(projectRoot);
 
     case 'sync':
-      await syncThemes();
-      break;
+      return await syncThemes(projectRoot);
 
     case 'help':
     default:
-      showHelp();
-      break;
+      return showHelp();
   }
 }
 
+module.exports = {
+  main,
+  showHelp,
+  listThemes,
+  createTheme,
+  syncThemes,
+  setActiveThemeCommand,
+  selectTheme
+};
+
 // Run CLI
-main().catch(error => {
-  console.error(`\nUnexpected error: ${error.message}\n`);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().then(code => {
+    process.exit(code ?? 0);
+  }).catch(error => {
+    console.error(`\nUnexpected error: ${error.message}\n`);
+    process.exit(1);
+  });
+}
