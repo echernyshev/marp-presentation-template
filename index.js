@@ -19,7 +19,8 @@ const themesLibraryPath = path.join(__dirname, 'themes');
 
 /**
  * Show usage information
- * @param {boolean} isError - If true, write to stderr and exit with error code
+ * @param {boolean} [isError=false] - If true, write to stderr and signal error code
+ * @returns {number} Exit code (1 if isError, else 0)
  */
 function showUsage(isError = false) {
   const output = isError ? console.error : console.log;
@@ -37,20 +38,19 @@ function showUsage(isError = false) {
   output('  npx create-marp-presentation theme:add ./my-project beam marpx');
   output('');
 
-  if (isError) {
-    process.exit(1);
-  }
+  return isError ? 1 : 0;
 }
 
 /**
  * Handle theme:add command
  * @param {string[]} args - Command arguments
+ * @returns {Promise<number>} Exit code
  */
 async function handleThemeAdd(args) {
   const targetPath = args[0];
   if (!targetPath) {
     console.error('Usage: npx create-marp-presentation theme:add <project-path> [theme-names...]');
-    process.exit(1);
+    return 1;
   }
 
   const themeNames = args.slice(1); // Additional arguments are theme names
@@ -60,16 +60,18 @@ async function handleThemeAdd(args) {
       themesLibraryPath,
       themeNames: themeNames.length > 0 ? themeNames : null
     });
+    return 0;
   } catch (error) {
     console.error(`Error: ${error.message}`);
-    process.exit(1);
+    return 1;
   }
 }
 
 /**
  * Handle project creation command
  * @param {string} projectName - Name of the project
- * @param {string[]} args - Remaining arguments (e.g., --path)
+ * @param {string[]} [args=[]] - Remaining arguments (e.g., --path)
+ * @returns {Promise<number>} Exit code
  */
 async function handleProjectCreation(projectName, args = []) {
   // Parse --path argument if present
@@ -82,7 +84,7 @@ async function handleProjectCreation(projectName, args = []) {
     if (!validation.valid) {
       console.error(`Invalid --path: "${pathArg}"`);
       console.error(validation.error);
-      process.exit(1);
+      return 1;
     }
     outputPath = validation.resolvedPath;
   }
@@ -93,39 +95,45 @@ async function handleProjectCreation(projectName, args = []) {
       templatePath,
       themesLibraryPath
     });
+    return 0;
   } catch (error) {
     if (error.message === 'Invalid project name' || error.message === 'Project directory already exists') {
-      process.exit(1);
+      return 1;
     }
     console.error('Error creating project:', error.message);
-    process.exit(1);
+    return 1;
   }
 }
 
 /**
  * Main entry point
+ * @param {string[]} [argv=process.argv.slice(2)] - CLI arguments
+ * @returns {Promise<number>} Exit code
  */
-async function main() {
-  const [command, ...args] = process.argv.slice(2);
+async function main(argv = process.argv.slice(2)) {
+  const [command, ...args] = argv;
 
   switch (command) {
     case 'theme:add':
-      await handleThemeAdd(args);
-      break;
+      return await handleThemeAdd(args);
 
     case undefined:
-      showUsage(true); // Exit with error code 1
-      break;
+      return showUsage(true); // Exit with error code 1
 
     default:
       // Treat as project name (backward compatible)
-      await handleProjectCreation(command, args);
-      break;
+      return await handleProjectCreation(command, args);
   }
 }
 
+module.exports = { main, showUsage, handleThemeAdd, handleProjectCreation };
+
 // Run
-main().catch(error => {
-  console.error('Unexpected error:', error.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().then(code => {
+    process.exit(code ?? 0);
+  }).catch(error => {
+    console.error('Unexpected error:', error.message);
+    process.exit(1);
+  });
+}
