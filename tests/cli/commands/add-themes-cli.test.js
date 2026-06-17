@@ -269,4 +269,137 @@ describe('cli/commands/add-themes-cli', () => {
       ).rejects.toThrow('Generic error');
     });
   });
+
+  describe('Interactive examples prompt (TTY)', () => {
+    let originalIsTTY;
+
+    beforeEach(() => {
+      originalIsTTY = process.stdin.isTTY;
+      // Force the interactive examples branch to execute
+      Object.defineProperty(process.stdin, 'isTTY', {
+        value: true,
+        configurable: true
+      });
+    });
+
+    afterEach(() => {
+      if (originalIsTTY === undefined) {
+        delete process.stdin.isTTY;
+      } else {
+        Object.defineProperty(process.stdin, 'isTTY', {
+          value: originalIsTTY,
+          configurable: true
+        });
+      }
+    });
+
+    test('should prompt for and copy examples when stdin is a TTY and themes were copied', async () => {
+      const tempDir = '/tmp/test-tty-examples-' + Date.now();
+      fs.mkdirSync(tempDir, { recursive: true });
+      fs.writeFileSync(path.join(tempDir, 'presentation.md'), '# Test');
+
+      const mockPromptExamples = jest.fn().mockResolvedValue([
+        { relativePath: 'example.md', themes: ['beam'] }
+      ]);
+      const mockCopyExamples = jest.fn();
+
+      AddThemesCommand.mockImplementation(() => ({
+        execute: mockExecute,
+        _promptExamples: mockPromptExamples,
+        _copyExamples: mockCopyExamples
+      }));
+
+      mockExecute.mockResolvedValue({
+        copied: [{ name: 'beam' }],
+        skipped: [],
+        conflicts: []
+      });
+
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      try {
+        await addThemesToExistingProject(tempDir, { themeNames: ['beam'] });
+
+        expect(mockPromptExamples).toHaveBeenCalledWith([{ name: 'beam' }]);
+        expect(mockCopyExamples).toHaveBeenCalledWith(
+          expect.any(Array),
+          path.resolve(tempDir),
+          expect.stringContaining('examples')
+        );
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Examples copied: 1')
+        );
+      } finally {
+        consoleLogSpy.mockRestore();
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    test('should not copy examples when prompt returns no examples', async () => {
+      const tempDir = '/tmp/test-tty-no-examples-' + Date.now();
+      fs.mkdirSync(tempDir, { recursive: true });
+      fs.writeFileSync(path.join(tempDir, 'presentation.md'), '# Test');
+
+      const mockPromptExamples = jest.fn().mockResolvedValue([]);
+      const mockCopyExamples = jest.fn();
+
+      AddThemesCommand.mockImplementation(() => ({
+        execute: mockExecute,
+        _promptExamples: mockPromptExamples,
+        _copyExamples: mockCopyExamples
+      }));
+
+      mockExecute.mockResolvedValue({
+        copied: [{ name: 'beam' }],
+        skipped: [],
+        conflicts: []
+      });
+
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      try {
+        await addThemesToExistingProject(tempDir, { themeNames: ['beam'] });
+
+        expect(mockPromptExamples).toHaveBeenCalled();
+        expect(mockCopyExamples).not.toHaveBeenCalled();
+        expect(consoleLogSpy).not.toHaveBeenCalledWith(
+          expect.stringContaining('Examples copied')
+        );
+      } finally {
+        consoleLogSpy.mockRestore();
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    test('should not prompt for examples when no themes were copied', async () => {
+      const tempDir = '/tmp/test-tty-empty-' + Date.now();
+      fs.mkdirSync(tempDir, { recursive: true });
+      fs.writeFileSync(path.join(tempDir, 'presentation.md'), '# Test');
+
+      const mockPromptExamples = jest.fn();
+      const mockCopyExamples = jest.fn();
+
+      AddThemesCommand.mockImplementation(() => ({
+        execute: mockExecute,
+        _promptExamples: mockPromptExamples,
+        _copyExamples: mockCopyExamples
+      }));
+
+      mockExecute.mockResolvedValue({
+        copied: [],
+        skipped: [],
+        conflicts: []
+      });
+
+      try {
+        await addThemesToExistingProject(tempDir, { themeNames: ['beam'] });
+
+        // No copied themes -> the TTY branch is skipped entirely
+        expect(mockPromptExamples).not.toHaveBeenCalled();
+        expect(mockCopyExamples).not.toHaveBeenCalled();
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+  });
 });

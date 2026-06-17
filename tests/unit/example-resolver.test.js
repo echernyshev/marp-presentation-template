@@ -1,3 +1,6 @@
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { ExampleResolver } = require('../../lib/example-resolver');
 
 describe('ExampleResolver', () => {
@@ -207,6 +210,117 @@ describe('ExampleResolver', () => {
       const resolver = new ExampleResolver('tests/fixtures/examples');
       const dirMap = resolver.groupByDirectory([]);
       expect(dirMap.size).toBe(0);
+    });
+  });
+
+  // Branch coverage: symlink skipping, parse-error catch, direct-file assets,
+  // _directoryContainsMarkdown missing dir, and recursion helpers.
+  describe('ExampleResolver branch coverage', () => {
+    let tempRoot;
+
+    beforeEach(() => {
+      tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ex-resolver-'));
+    });
+
+    afterEach(() => {
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    });
+
+    test('должен пропускать символические ссылки при поиске .md файлов', () => {
+      fs.mkdirSync(path.join(tempRoot, 'sub'), { recursive: true });
+      fs.writeFileSync(path.join(tempRoot, 'sub', 'real.md'), '---\n---\n# ok');
+      // Symlink pointing at a real .md file - must NOT be discovered
+      fs.symlinkSync(
+        path.join(tempRoot, 'sub', 'real.md'),
+        path.join(tempRoot, 'link.md')
+      );
+
+      const resolver = new ExampleResolver(tempRoot);
+      const examples = resolver.discoverAll();
+
+      const paths = examples.map(e => e.relativePath);
+      expect(paths).toContain(path.join('sub', 'real.md'));
+      expect(paths).not.toContain('link.md');
+    });
+
+    test('должен выводить предупреждение, если разбор примера вызывает ошибку', () => {
+      fs.writeFileSync(path.join(tempRoot, 'bad.md'), '---\n---\n# ok');
+      // Make unreadable so readFileSync throws inside _parseExample
+      fs.chmodSync(path.join(tempRoot, 'bad.md'), 0o000);
+
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+      try {
+        const resolver = new ExampleResolver(tempRoot);
+        const examples = resolver.discoverAll();
+
+        expect(examples).toEqual([]);
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Could not parse example')
+        );
+      } finally {
+        // Restore permissions so cleanup can remove the file
+        fs.chmodSync(path.join(tempRoot, 'bad.md'), 0o644);
+        warnSpy.mockRestore();
+      }
+    });
+
+    test('должен включать статические файлы в той же директории, что и пример', () => {
+      // example.md with a direct (non-subdir) sibling file -> exercises
+      // the entry.isFile() push branch in _findStaticAssets
+      fs.writeFileSync(
+        path.join(tempRoot, 'example.md'),
+        '---\nthemes: [beam]\n---\n# x'
+      );
+      fs.writeFileSync(path.join(tempRoot, 'image.png'), 'png-bytes');
+
+      const resolver = new ExampleResolver(tempRoot);
+      const examples = resolver.discoverAll();
+      const example = examples.find(e => e.relativePath === 'example.md');
+
+      expect(example.staticAssets).toContain('image.png');
+    });
+
+    test('должен пропускать символические ссылки при поиске статических файлов директории', () => {
+      // _findAllStaticFiles symlink-skip branch (line 179)
+      fs.mkdirSync(path.join(tempRoot, 'beam'), { recursive: true });
+      fs.writeFileSync(path.join(tempRoot, 'beam', 'real.png'), 'png');
+      fs.symlinkSync(
+        path.join(tempRoot, 'beam', 'real.png'),
+        path.join(tempRoot, 'beam', 'link.png')
+      );
+
+      const resolver = new ExampleResolver(tempRoot);
+      const staticFiles = resolver._findAllStaticFiles('beam');
+
+      expect(staticFiles).toContain(path.join('beam', 'real.png'));
+      expect(staticFiles.some(f => f.endsWith('link.png'))).toBe(false);
+    });
+
+    test('должен возвращать false, если директория не существует в _directoryContainsMarkdown', () => {
+      const resolver = new ExampleResolver(tempRoot);
+      expect(resolver._directoryContainsMarkdown(path.join(tempRoot, 'missing'))).toBe(false);
+    });
+
+    test('должен рекурсивно находить файлы и пропускать символические ссылки в _findStaticAssetsInDir', () => {
+      // Exercises the recursion (line 270-271) and symlink skip (line 262)
+      fs.mkdirSync(path.join(tempRoot, 'assets', 'nested'), { recursive: true });
+      fs.writeFileSync(path.join(tempRoot, 'assets', 'top.png'), 'png');
+      fs.writeFileSync(path.join(tempRoot, 'assets', 'nested', 'deep.png'), 'png');
+      fs.symlinkSync(
+        path.join(tempRoot, 'assets', 'top.png'),
+        path.join(tempRoot, 'assets', 'link.png')
+      );
+
+      const resolver = new ExampleResolver(tempRoot);
+      const assets = resolver._findStaticAssetsInDir(
+        path.join(tempRoot, 'assets'),
+        tempRoot
+      );
+
+      expect(assets).toContain(path.join('assets', 'top.png'));
+      expect(assets).toContain(path.join('assets', 'nested', 'deep.png'));
+      expect(assets.some(f => f.endsWith('link.png'))).toBe(false);
     });
   });
 });
