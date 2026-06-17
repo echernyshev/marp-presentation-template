@@ -306,4 +306,91 @@ theme: default
       expect(fs.existsSync(vscodeDir)).toBe(true);
     });
   });
+
+  describe('ensureThemeSetConfig (static)', () => {
+    test('должен добавить marp.themeSet, если его нет', () => {
+      fs.writeFileSync(
+        path.join(tempDir, 'package.json'),
+        JSON.stringify({ name: 'p' }, null, 2)
+      );
+
+      const added = ThemeManager.ensureThemeSetConfig(tempDir);
+
+      expect(added).toBe(true);
+      const pkg = JSON.parse(fs.readFileSync(path.join(tempDir, 'package.json'), 'utf-8'));
+      expect(pkg.marp.themeSet).toBe('./themes');
+    });
+
+    test('должен вернуть false, если marp.themeSet уже есть', () => {
+      fs.writeFileSync(
+        path.join(tempDir, 'package.json'),
+        JSON.stringify({ marp: { themeSet: './themes' } }, null, 2)
+      );
+
+      const added = ThemeManager.ensureThemeSetConfig(tempDir);
+
+      expect(added).toBe(false);
+    });
+
+    test('должен вернуть false и warn, если package.json не существует', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const added = ThemeManager.ensureThemeSetConfig(tempDir);
+      expect(added).toBe(false);
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    test('silent=true не логирует', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      ThemeManager.ensureThemeSetConfig(tempDir, { silent: true });
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    test('должен вернуть false при невалидном JSON (молча в silent)', () => {
+      fs.writeFileSync(path.join(tempDir, 'package.json'), '{ not valid json');
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const added = ThemeManager.ensureThemeSetConfig(tempDir, { silent: true });
+      expect(added).toBe(false);
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+  });
+
+  describe('listDirectories', () => {
+    test('должен вернуть имена поддиректорий themes', () => {
+      fs.mkdirSync(path.join(themesDir, 'folder-a'), { recursive: true });
+      fs.mkdirSync(path.join(themesDir, 'folder-b'), { recursive: true });
+      fs.writeFileSync(path.join(themesDir, 'loose.css'), '/* @theme loose */');
+
+      const manager = new ThemeManager(tempDir);
+      const dirs = manager.listDirectories();
+
+      expect(dirs).toContain('folder-a');
+      expect(dirs).toContain('folder-b');
+      expect(dirs).not.toContain('loose.css');
+    });
+
+    test('должен вернуть [] если themes не существует', () => {
+      fs.rmSync(themesDir, { recursive: true, force: true });
+      const manager = new ThemeManager(tempDir);
+      expect(manager.listDirectories()).toEqual([]);
+    });
+  });
+
+  describe('constructor validation', () => {
+    test('должен бросить, если projectPath не передан', () => {
+      expect(() => new ThemeManager()).toThrow('Project path is required');
+    });
+  });
+
+  describe('createTheme with description', () => {
+    test('должен включить @description в CSS, если передан', () => {
+      const manager = new ThemeManager(tempDir);
+      manager.createTheme('desc-theme', null, 'root', null, 'My cool theme');
+
+      const content = fs.readFileSync(path.join(themesDir, 'desc-theme.css'), 'utf-8');
+      expect(content).toContain('@description My cool theme');
+    });
+  });
 });
