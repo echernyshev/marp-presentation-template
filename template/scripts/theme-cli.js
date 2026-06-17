@@ -10,18 +10,12 @@ const fs = require('fs');
 const path = require('path');
 
 // Import lib modules
-const {
-  ThemeResolver,
-  Theme
-} = require('./lib/theme-resolver');
+const { ThemeResolver } = require('./lib/theme-resolver');
 const { ThemeManager } = require('./lib/theme-manager');
 const { Prompts } = require('./lib/prompts');
-const { Frontmatter } = require('./lib/frontmatter');
 const { VSCodeIntegration } = require('./lib/vscode-integration');
 const {
-  ThemeError,
   ThemeNotFoundError,
-  ThemeAlreadyExistsError,
   PresentationNotFoundError
 } = require('./lib/errors');
 
@@ -300,6 +294,7 @@ module.exports = {
   selectTheme
 };
 
+/* istanbul ignore next */
 // Run CLI
 if (require.main === module) {
   main().then(code => {

@@ -69,6 +69,67 @@ describe('copy-static (in-process)', () => {
     logSpy.mockRestore();
   });
 
+  test('использует process.cwd() когда cwd не передан (ветка по умолчанию)', () => {
+    fs.mkdirSync(path.join(tmp, 'static'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, 'static', 'd.txt'), 'x');
+
+    const originalCwd = process.cwd();
+    try {
+      process.chdir(tmp);
+      const copied = copyStatic({ config: { staticFolders: ['static/**'] } });
+      expect(copied).toBe(1);
+      expect(fs.existsSync(path.join(tmp, 'output', 'static', 'd.txt'))).toBe(true);
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  test('использует loadConfig() когда config не передан (ветка по умолчанию)', () => {
+    fs.mkdirSync(path.join(tmp, 'static'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, 'static', 'e.txt'), 'x');
+
+    const originalCwd = process.cwd();
+    try {
+      process.chdir(tmp);
+      const copied = copyStatic({ cwd: tmp });
+      // config не передан -> loadConfig() пытается загрузить marp.config.js;
+      // в tmp его нет -> {} -> дефолт static/** -> output
+      expect(copied).toBe(1);
+      expect(fs.existsSync(path.join(tmp, 'output', 'static', 'e.txt'))).toBe(true);
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  test('поддерживает абсолютный путь outputDir (ветка isAbsolute=true)', () => {
+    fs.mkdirSync(path.join(tmp, 'static'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, 'static', 'f.txt'), 'x');
+
+    const absOutput = path.join(tmp, 'abs-output');
+    const copied = copyStatic({
+      cwd: tmp,
+      config: { staticFolders: ['static/**'], outputDir: absOutput },
+    });
+
+    expect(copied).toBe(1);
+    expect(fs.existsSync(path.join(absOutput, 'static', 'f.txt'))).toBe(true);
+  });
+
+  test('поддерживает абсолютные пути файлов из glob (ветка isAbsolute=true для file)', () => {
+    fs.mkdirSync(path.join(tmp, 'static'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, 'static', 'g.txt'), 'x');
+
+    // Передаём абсолютные паттерны — fast-glob вернёт абсолютные пути,
+    // что покрывает ветку path.isAbsolute(file) === true.
+    const absPattern = path.join(tmp, 'static', '**');
+    const copied = copyStatic({
+      cwd: tmp,
+      config: { staticFolders: [absPattern], outputDir: 'output' },
+    });
+
+    expect(copied).toBeGreaterThanOrEqual(1);
+  });
+
   test('loadConfig должен вернуть пустой объект при отсутствии marp.config.js', () => {
     // Вызываем из директории без marp.config.js поблизости — проверяем fallback
     jest.resetModules();

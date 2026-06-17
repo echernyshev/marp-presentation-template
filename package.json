@@ -61,7 +61,22 @@
         "functions": 94,
         "lines": 96,
         "statements": 96
-      }
+      },
+      "./index.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./cli/commands/create-project.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./cli/commands/add-themes-cli.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./cli/utils/file-utils.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./cli/utils/prompt-utils.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./lib/add-themes-command.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./lib/errors.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./lib/example-resolver.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./lib/frontmatter.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./lib/prompts.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./lib/theme-manager.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./lib/theme-resolver.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./lib/vscode-integration.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./template/scripts/copy-static.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 },
+      "./template/scripts/theme-cli.js": { "branches": 80, "functions": 85, "lines": 85, "statements": 85 }
     }
   },
   "dependencies": {

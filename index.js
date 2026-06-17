@@ -128,6 +128,7 @@ async function main(argv = process.argv.slice(2)) {
 
 module.exports = { main, showUsage, handleThemeAdd, handleProjectCreation };
 
+/* istanbul ignore next */
 // Run
 if (require.main === module) {
   main().then(code => {

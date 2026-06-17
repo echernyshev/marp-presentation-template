@@ -65,6 +65,7 @@ function copyStatic(options = {}) {
 
 module.exports = { copyStatic, loadConfig };
 
+/* istanbul ignore next */
 // Run as a script (scaffolded project: `npm run copy:static`)
 if (require.main === module) {
   copyStatic();
