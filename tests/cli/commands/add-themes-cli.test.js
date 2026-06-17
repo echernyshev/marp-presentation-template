@@ -3,6 +3,11 @@ const path = require('path');
 
 const { addThemesToExistingProject } = require('../../../cli/commands/add-themes-cli');
 const { ThemeError } = require('../../../lib/errors');
+const {
+  snapshotStdinIsTTY,
+  setStdinIsTTY,
+  restoreStdinIsTTY
+} = require('../../helpers/stdin-tty');
 
 // Mock the dependencies
 jest.mock('../../../lib/add-themes-command');
@@ -271,26 +276,16 @@ describe('cli/commands/add-themes-cli', () => {
   });
 
   describe('Interactive examples prompt (TTY)', () => {
-    let originalIsTTY;
+    let ttySnapshot;
 
     beforeEach(() => {
-      originalIsTTY = process.stdin.isTTY;
+      ttySnapshot = snapshotStdinIsTTY();
       // Force the interactive examples branch to execute
-      Object.defineProperty(process.stdin, 'isTTY', {
-        value: true,
-        configurable: true
-      });
+      setStdinIsTTY(true);
     });
 
     afterEach(() => {
-      if (originalIsTTY === undefined) {
-        delete process.stdin.isTTY;
-      } else {
-        Object.defineProperty(process.stdin, 'isTTY', {
-          value: originalIsTTY,
-          configurable: true
-        });
-      }
+      restoreStdinIsTTY(ttySnapshot);
     });
 
     test('should prompt for and copy examples when stdin is a TTY and themes were copied', async () => {

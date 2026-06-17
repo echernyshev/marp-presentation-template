@@ -14,9 +14,14 @@ const readline = require('readline');
 
 // Now require after mocking is set up
 const { askCreateExamples, askAddThemes } = require('../../../cli/utils/prompt-utils');
+const {
+  snapshotStdinIsTTY,
+  setStdinIsTTY,
+  restoreStdinIsTTY
+} = require('../../helpers/stdin-tty');
 
 describe('cli/utils/prompt-utils', () => {
-  const originalTTY = process.stdin.isTTY;
+  let ttySnapshot = snapshotStdinIsTTY();
   const mockCreateInterface = readline.createInterface;
 
   beforeEach(() => {
@@ -27,13 +32,13 @@ describe('cli/utils/prompt-utils', () => {
   });
 
   afterEach(() => {
-    // Restore original TTY value
-    Object.defineProperty(process.stdin, 'isTTY', { value: originalTTY, writable: true });
+    // Restore TTY to pristine state (no leftover non-configurable descriptor)
+    restoreStdinIsTTY(ttySnapshot);
   });
 
   describe('askCreateExamples()', () => {
     test('should return true when user enters "Y" in TTY mode', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, writable: true });
+      setStdinIsTTY(true);
 
       // Setup mock to call callback with 'Y'
       mockQuestion.mockImplementationOnce((prompt, callback) => {
@@ -47,7 +52,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should return true when user enters "y" in TTY mode', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, writable: true });
+      setStdinIsTTY(true);
 
       mockQuestion.mockImplementationOnce((prompt, callback) => {
         callback('y');
@@ -58,7 +63,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should return false when user enters "n" in TTY mode', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, writable: true });
+      setStdinIsTTY(true);
 
       mockQuestion.mockImplementationOnce((prompt, callback) => {
         callback('n');
@@ -69,7 +74,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should return false when user enters "no" in TTY mode', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, writable: true });
+      setStdinIsTTY(true);
 
       mockQuestion.mockImplementationOnce((prompt, callback) => {
         callback('no');
@@ -80,7 +85,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should return true when user enters empty string in TTY mode (default)', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, writable: true });
+      setStdinIsTTY(true);
 
       mockQuestion.mockImplementationOnce((prompt, callback) => {
         callback('');
@@ -91,7 +96,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should handle whitespace input correctly', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, writable: true });
+      setStdinIsTTY(true);
 
       mockQuestion.mockImplementationOnce((prompt, callback) => {
         callback('  Yes  ');
@@ -102,7 +107,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should return true in non-TTY mode with empty stdin', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: false, writable: true });
+      setStdinIsTTY(false);
       Object.defineProperty(process.stdin, 'readableLength', { value: 0, writable: true });
 
       // Mock stdin methods for non-TTY mode
@@ -128,7 +133,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should return false in non-TTY mode with "n" input', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: false, writable: true });
+      setStdinIsTTY(false);
 
       const mockOn = jest.fn();
       const mockSetEncoding = jest.fn();
@@ -170,7 +175,7 @@ describe('cli/utils/prompt-utils', () => {
 
   describe('askAddThemes()', () => {
     test('should return true when user enters "Y" in TTY mode', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, writable: true });
+      setStdinIsTTY(true);
 
       mockQuestion.mockImplementationOnce((prompt, callback) => {
         callback('Y');
@@ -183,7 +188,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should return true when user enters "y" in TTY mode', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, writable: true });
+      setStdinIsTTY(true);
 
       mockQuestion.mockImplementationOnce((prompt, callback) => {
         callback('y');
@@ -194,7 +199,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should return true when user enters empty string in TTY mode (default)', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, writable: true });
+      setStdinIsTTY(true);
 
       mockQuestion.mockImplementationOnce((prompt, callback) => {
         callback('');
@@ -205,7 +210,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should return false when user enters "n" in TTY mode', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, writable: true });
+      setStdinIsTTY(true);
 
       mockQuestion.mockImplementationOnce((prompt, callback) => {
         callback('n');
@@ -216,7 +221,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should return false when user enters "no" in TTY mode', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, writable: true });
+      setStdinIsTTY(true);
 
       mockQuestion.mockImplementationOnce((prompt, callback) => {
         callback('no');
@@ -227,7 +232,7 @@ describe('cli/utils/prompt-utils', () => {
     });
 
     test('should return false in non-TTY mode (default for themes)', async () => {
-      Object.defineProperty(process.stdin, 'isTTY', { value: false, writable: true });
+      setStdinIsTTY(false);
 
       const result = await askAddThemes();
       expect(result).toBe(false);

@@ -31,16 +31,21 @@ const { Prompts } = require('../../lib/prompts');
 const { ThemeManager } = require('../../lib/theme-manager');
 const { spawnSync } = require('child_process');
 const { copyDir } = require('../../cli/utils/file-utils');
+const {
+  snapshotStdinIsTTY,
+  setStdinIsTTY,
+  restoreStdinIsTTY
+} = require('../helpers/stdin-tty');
 
 describe('createProject (in-process branch coverage)', () => {
   let tmp;
-  let origIsTTY;
+  let ttySnapshot;
   let logSpy;
   let warnSpy;
 
   beforeEach(() => {
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'create-project-'));
-    origIsTTY = process.stdin.isTTY;
+    ttySnapshot = snapshotStdinIsTTY();
     logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.clearAllMocks();
@@ -49,14 +54,14 @@ describe('createProject (in-process branch coverage)', () => {
   });
 
   afterEach(() => {
-    process.stdin.isTTY = origIsTTY;
+    restoreStdinIsTTY(ttySnapshot);
     logSpy.mockRestore();
     warnSpy.mockRestore();
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
   test('интерактивный режим: темы выбраны -> копируются примеры и ставится активная тема', async () => {
-    process.stdin.isTTY = true;
+    setStdinIsTTY(true);
 
     const cmdInstance = {
       execute: jest.fn().mockResolvedValue({ copied: [{ name: 'beam' }] }),
@@ -84,7 +89,7 @@ describe('createProject (in-process branch coverage)', () => {
   });
 
   test('интерактивный режим: темы выбраны, но setActiveTheme падает -> warn', async () => {
-    process.stdin.isTTY = true;
+    setStdinIsTTY(true);
     const cmdInstance = {
       execute: jest.fn().mockResolvedValue({ copied: [{ name: 'beam' }] }),
       _promptExamples: jest.fn().mockResolvedValue([]),
@@ -106,7 +111,7 @@ describe('createProject (in-process branch coverage)', () => {
   });
 
   test('неинтерактивный режим (нет TTY): темы не запрашиваются, ставится default', async () => {
-    process.stdin.isTTY = false;
+    setStdinIsTTY(false);
     const tmInstance = { setActiveTheme: jest.fn() };
     ThemeManager.mockImplementation(() => tmInstance);
 
@@ -121,7 +126,7 @@ describe('createProject (in-process branch coverage)', () => {
   });
 
   test('неинтерактивный режим: setActiveTheme(default) падает -> warn', async () => {
-    process.stdin.isTTY = false;
+    setStdinIsTTY(false);
     ThemeManager.mockImplementation(() => ({
       setActiveTheme: jest.fn(() => { throw new Error('presentation missing'); }),
     }));
@@ -136,7 +141,7 @@ describe('createProject (in-process branch coverage)', () => {
   });
 
   test('npm install failed -> бросает "npm install failed"', async () => {
-    process.stdin.isTTY = false;
+    setStdinIsTTY(false);
     spawnSync.mockReturnValue({ status: 1 });
     ThemeManager.mockImplementation(() => ({ setActiveTheme: jest.fn() }));
 
@@ -150,7 +155,7 @@ describe('createProject (in-process branch coverage)', () => {
   });
 
   test('invalid project name -> бросает "Invalid project name"', async () => {
-    process.stdin.isTTY = false;
+    setStdinIsTTY(false);
     await expect(
       createProject('Invalid_Name', { outputPath: tmp })
     ).rejects.toThrow('Invalid project name');
